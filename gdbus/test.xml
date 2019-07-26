@@ -1,35 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <node>
-  <interface name="org.wx.test.itf1">
-    <method name="fun1">
-      <arg name="attr_type" type="s" direction="in"/>
+  <interface name="org.wx.test.interface1">
+    <method name="print"> <!-- 单向字符串传递 -->
       <arg name="value" type="s" direction="in"/>
-      <arg name="reply" type="i" direction="out"/>
     </method>
-    <method name="WriteData">
-      <arg name="data" type="s" direction="in"/>
-      <arg name="reply" type="i" direction="out"/>
+    <method name="add"> <!-- 整形数组求和 -->
+      <arg name="val" type="ai" direction="in"/>
+      <arg name="sum" type="i" direction="out"/>
     </method>
-    <signal name="SignalTest">
+    <signal name="boradcast"> <!-- 广播字符串 -->
       <arg name="data" type="s"/>
     </signal>
   </interface>
-  <interface name="org.wx.test.itf2">
-    <method name="ClientRequest">
-      <!-- 这个地方就是不同API的ID -->
-      <arg name="action_id" type="i" direction="in" />
-      <!-- 这个参数可以用，也可以不用 -->
-      <arg name="input_int" type="i" direction="in" />
-      <arg name="in_arg" type="v" direction="in"/>
-      <!-- 这个可以用，也可以不用 -->
-      <arg name="output_int" type="i" direction="out" />
-      <!-- 这个Garray用来从server侧传回数据到client侧 -->
-      <arg name="output_garray" type="v" direction="out" />
-      <!-- 执行结果 -->
-      <arg name="result" type="i" direction="out" />
+  <interface name="org.wx.test.interface2">
+    <method name="transfer"> <!-- 结构体序列化传参 -->
+      <arg name="in_data" type="v" direction="in"/>
+      <arg name="out_data" type="v" direction="out"/>
     </method>
-    <signal name="SignalRequest">
-      <arg name="data" type="s"/>
-    </signal>
   </interface>
 </node>

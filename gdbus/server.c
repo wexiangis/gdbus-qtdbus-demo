@@ -7,147 +7,141 @@
 #include "comm.h"
 #include "test.h"
 
-static Log* log_skeleton=NULL;
-static General_api *general_api_skeleton = NULL;
+Interface1* itf1=NULL;
+Interface2* itf2=NULL;
 
-static  gboolean handle_write_data(Log* object,
+static void handle_print(
+        GObject* object,
         GDBusMethodInvocation *invocation,
-        const gchar *arg_data,
-        gpointer user_data)
+        const gchar *value,
+        private_data *pdat)
 {
-    int reply = 10086;
-    printf("write_data: %s\n", arg_data);
-    // reply = write_log(arg_data);
-
-    log_complete_write_data(object,invocation,reply);
-
-    return TRUE;
+    g_print("handle_print: %s\n", value);
 }
 
-static  gboolean handle_set_attr(Log* object,
-        GDBusMethodInvocation *invocation,
-        const gchar *arg_attr_type,
-        const gchar *arg_value,
-        gpointer user_data)
-{
-    int reply = -1;
-    g_print("Method call: attr_type is %d;value is %d\n", arg_attr_type, arg_value);
-    //对于复杂数据结构可以使用variant方式进行序列化和反序列化操作
-    // log_complete_set_attr(object,invocation,reply);
-    
-    return TRUE;
-}
-
-static  gboolean handle_client_request(General_api *object,
+static void handle_add(
+    GObject* object,
     GDBusMethodInvocation *invocation,
-    gint arg_action_id,
-    gint arg_input_int,
-    GVariant *arg_in_arg)
+    GVariant *val,
+    private_data *pdat)
 {
-    gint output_int;
-    printf ("arg_action_id is:%d;arg_input_int is:%d\n", arg_action_id, arg_input_int);
-    
-    typedef struct ttt{
-        int i;
-        char a[4];
-    };
-    struct ttt val;
-    def_depkg(arg_in_arg, &val, sizeof(val));
-    printf("i = 0x%X, a = %s\n", val.i, val.a);
-    int i = 0;
-    for(i = 0; i < 4; i++)
-        printf("[%d]: 0x%X\n", i, val.a[i]);
-
-    GVariant *vb;
-    val.i = 0x88776655;
-    strcpy(val.a, "back");
-    var_enpkg(&vb, &val, sizeof(val));
-    general_api_complete_client_request(object, invocation, sizeof(val), vb, 10086);
-    // g_variant_unref(vb);
-    return TRUE;
+    g_print("handle_add:\n");
+    //
+    gint sum = 0, tmp;
+    GVariant *tar;
+    g_variant_get(val, "ai", &tar);
+    while(g_variant_iter_loop(tar, "i", &tmp))
+    {
+        printf("  add : %d\n", tmp);
+        sum += tmp;
+    }
+    //
+    interface1_complete_add(object, invocation, sum);
 }
 
-gboolean emit_signal_test(gconstpointer p)          
-{                                                         
-    // g_print("Emit_Test_Status() is called.\n");            
+static void handle_transfer(
+    GObject* object,
+    GDBusMethodInvocation *invocation,
+    GVariant *in_data,
+    private_data *pdat)
+{
+    test_strct val;
+    de_pkg(in_data, &val, sizeof(val));
+    //
+    g_print("handle_transfer: i=%d, s=%s, d=%lf, f=%f/%f/%f\n", 
+        val.i, val.s, val.d, val.f[0], val.f[1], val.f[2]);
+    //
+    val.i = 10010;
+    val.s[1] = '&';
+    val.d = 1.23456;
+    val.f[0] = 1.111;
+    val.f[1] = 2.222;
+    val.f[2] = 3.333;
+    //
+    interface2_complete_transfer(object, invocation, en_pkg(&val, sizeof(val)));
+}
 
-    gchar *data = "signal test";
-    log_emit_signal_test (log_skeleton, data);
-    return TRUE;                                          
-}  
-gboolean emit_signal_request(gconstpointer p)          
-{                                                         
-    // g_print("Emit_Test_Status() is called.\n");            
-
-    gchar *data = "signal test";
-    general_api_emit_signal_request (general_api_skeleton, data);
+static gboolean emit_signal_boradcast(private_data *pdat)          
+{                                     
+    gchar *data = "this is boradcast";
+    interface1_emit_boradcast(itf1, data);
     return TRUE;                                          
 }
-void GBusAcquired_Callback (GDBusConnection *connection,
+
+void bus_acquired_handler(
+        GDBusConnection *connection,
         const gchar *name,
-        gpointer user_data)
+        private_data *pdat)
 {
     GError *error = NULL;
 
-    printf("GBusAcquired_Callback has been invoked\n");
-    printf("GBusAcquired_Callback the name = %s\n",name);
-    printf("GBusAcquired_Callback the user_data = %s\n",(char*)user_data);
-
-    log_skeleton =  log_skeleton_new ();
-    g_signal_connect(log_skeleton,"handle-write-data",G_CALLBACK(handle_write_data),NULL);
-    g_signal_connect(log_skeleton,"handle-set-attr",G_CALLBACK(handle_set_attr),NULL);
-
-    g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(log_skeleton), connection, "/org/zhd/qbox/log", &error);
+    printf("bus_acquired_handler has been invoked\n");
+    printf("bus_acquired_handler the name = %s\n",name);
+    //
+    itf1 = interface1_skeleton_new();
+    g_signal_connect(itf1, "handle-print", G_CALLBACK(handle_print), NULL);
+    g_signal_connect(itf1, "handle-add", G_CALLBACK(handle_add), NULL);
+    //
+    g_dbus_interface_skeleton_export(
+            G_DBUS_INTERFACE_SKELETON(itf1), 
+            connection, 
+            "/org/wx/test/interface1", 
+            &error);
     if(error != NULL){                                                           
-        g_print("Error: Failed to export object. Reason: %s.\n", error->message);
+        g_print("Error: itf1 Failed to export object. Reason: %s.\n", error->message);
         g_error_free(error);                                                     
     }
-
-    general_api_skeleton = general_api_skeleton_new();
-    g_signal_connect(general_api_skeleton,"handle-client-request",G_CALLBACK(handle_client_request),NULL);
-    // g_signal_connect(general_api_skeleton,"handle-test-ay",G_CALLBACK(handle_test_ay),NULL);
-
-    g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(general_api_skeleton), connection, "/org/zhd/qbox/general", &error);
+    //
+    itf2 = interface2_skeleton_new();
+    g_signal_connect(itf2, "handle-transfer", G_CALLBACK(handle_transfer), NULL);
+    //
+    g_dbus_interface_skeleton_export(
+            G_DBUS_INTERFACE_SKELETON(itf2), 
+            connection, 
+            "/org/wx/test/interface2", 
+            &error);
     if(error != NULL){                                                           
-        g_print("Error: Failed to export object. Reason: %s.\n", error->message);
+        g_print("Error: itf2 Failed to export object. Reason: %s.\n", error->message);
         g_error_free(error);                                                     
-    }                                                                           
+    }                                                                    
 }
 
-void GBusNameAcquired_Callback (GDBusConnection *connection,
+void name_acquired_handler(
+        GDBusConnection *connection,
         const gchar *name,
-        gpointer user_data)
+        private_data *pdat)
 {
-    printf("GBusNameAcquired_Callback has been invoked\n");
+    printf("name_acquired_handler has been invoked\n");
 }
 
-void GBusNameLost_Callback (GDBusConnection *connection,
+void name_lost_handler(
+        GDBusConnection *connection,
         const gchar *name,
-        gpointer user_data)
+        private_data *pdat)
 {
     printf("GBusNameLost_Callback has been invoked\n");
 }
 
-//int gdbus_log_server_init()
 int main(void)
 {
-    char* s = NULL;//"log";
+    private_data pdat;
     GMainLoop* loop = NULL;
-
+    //
     guint own_id = g_bus_own_name (
-                G_BUS_TYPE_SESSION,
-                "org.zhd.qbox",
-                G_BUS_NAME_OWNER_FLAGS_NONE,
-                GBusAcquired_Callback,
-                GBusNameAcquired_Callback,
-                GBusNameLost_Callback,
-                (gpointer)s,
-                NULL);
-    g_timeout_add(1000, (GSourceFunc)emit_signal_request, NULL);
-    g_timeout_add(1000, (GSourceFunc)emit_signal_test, NULL);
+            G_BUS_TYPE_SESSION,
+            "org.wx.test",
+            G_BUS_NAME_OWNER_FLAGS_NONE,
+            bus_acquired_handler,
+            name_acquired_handler,
+            name_lost_handler,
+            (gpointer)&pdat, // user_data
+            NULL);           // user_data_free_func()
+    //
+    g_timeout_add(1000, (GSourceFunc)emit_signal_boradcast, NULL);
+    //
     loop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(loop);
-
+    //
     g_bus_unown_name(own_id);
     return 0;
 }

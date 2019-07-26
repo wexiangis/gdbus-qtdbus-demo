@@ -7,171 +7,157 @@
 #include "comm.h"
 #include "test.h"
 
-static GDBusProxy *proxy_log = NULL;
-static General_api *proxy_general = NULL;
- 
-void methodCallback (GObject* gobj, 
-        GAsyncResult* res, 
-        gpointer user_data)
-{
-	g_printf("methodCallback\n");
- 
-	GError *error = NULL;
-	GVariant *result;
-	gint response = 0;
+Interface1* itf1=NULL;
+Interface2* itf2=NULL;
 
-	result = g_dbus_proxy_call_finish (proxy_log, res, &error);
-	g_variant_get (result, "(i)", &response);
-	g_print ("Int from Server is: %d \n", response);
+static void handle_boradcast(
+        GObject* object,
+        GDBusMethodInvocation *invocation,
+        const gchar *value,
+        private_data *pdat)
+{
+    g_print("handle_boradcast: %s\n", value);
 }
 
-static gboolean handle_signal_test(Log* skeleton,
-        const gchar *arg_data,
-        gpointer user_data)
+static void name_appeared_handler
+        (GDBusConnection *connection,
+        const gchar *name,
+        const gchar *name_owner,
+        private_data *pdat)
 {
-	g_printf("signalCallback: %s\n", arg_data);
-}
-
-static void on_name_appeared (GDBusConnection *connection,
-                  const gchar     *name,
-                  const gchar     *name_owner,
-                  gpointer         user_data)
-{
-    g_print("on_name_appeared: name %s, owner %s\n", name, name_owner);
+    g_print("name_appeared_handler: name %s, owner %s\n", name, name_owner);
     //
     GError *error = NULL;
     //
-    proxy_log = g_dbus_proxy_new_sync(connection,
+    itf1 = interface1_proxy_new_sync(
+        connection,
         G_DBUS_PROXY_FLAGS_NONE, 
+        "org.wx.test", 
+        "/org/wx/test/interface1", 
         NULL, 
-        "org.zhd.qbox", 
-        "/org/zhd/qbox/log", 
-        "org.zhd.qbox.log", 
+        &error);
+    if(error != NULL){                                                           
+        g_print("Error: itf1 Failed to proxy object. Reason: %s.\n", error->message);
+        g_error_free(error);                                                     
+    }
+    g_signal_connect(itf1, "boradcast", G_CALLBACK(handle_boradcast), NULL);
+    //
+    itf2 = interface2_proxy_new_sync(
+        connection,
+        G_DBUS_PROXY_FLAGS_NONE, 
+        "org.wx.test", 
+        "/org/wx/test/interface2", 
         NULL, 
-        NULL);
-    // proxy_general = g_dbus_proxy_new_sync(connection,
-    //     G_DBUS_PROXY_FLAGS_NONE, 
-    //     NULL, 
-    //     "org.zhd.qbox", 
-    //     "/org/zhd/qbox/general_api", 
-    //     "org.zhd.qbox.general_api", 
-    //     NULL, 
-    //     NULL);
-    proxy_general = general_api_proxy_new_for_bus_sync (
-            G_BUS_TYPE_SESSION,
-            G_DBUS_PROXY_FLAGS_NONE,
-            "org.zhd.qbox", 
-            "/org/zhd/qbox/general", 
-            NULL,
-            &error);
-    //
-    // g_signal_connect(proxy_log, "signal-test", G_CALLBACK(handle_signal_test), NULL);
-    //
-    g_dbus_proxy_call(proxy_log, 
-        "WriteData", 
-        g_variant_new ("(s)", "1241435"), 
-        G_DBUS_CALL_FLAGS_NONE, 
-        -1, 
-        NULL, 
-        (GAsyncReadyCallback)methodCallback, 
-        NULL);
-    //
-    // g_signal_connect(proxy_general, "client-request", G_CALLBACK(handle_client_request), NULL);
-    //
-    // const gchar value[3] = "123";
-    typedef struct ttt{
-        int i;
-        char a[4];
-    };
-    struct ttt value = {
-        .i = 0x12345678,
-        .a = "1234"
-    };
-    value.a[1] = 0;
-    gint out_output_int = 0, out_result = 0;
-    //
-    GVariant *va, *vb;
-    var_enpkg(&va, &value, sizeof(value));
-    //
-    general_api_call_client_request_sync (
-        proxy_general, 100, sizeof(value), va, 
-        &out_output_int, &vb, &out_result, NULL, NULL);
-    //
-    struct ttt val;
-    def_depkg(vb, &val, sizeof(val));
-    printf("i = 0x%X, a = %s\n", val.i, val.a);
-    int i = 0;
-    for(i = 0; i < 4; i++)
-        printf("[%d]: 0x%X\n", i, val.a[i]);
-    //
-    // g_variant_unref(va);
-    // g_variant_unref(vb);
-    //
-    // g_dbus_proxy_call(proxy_general, 
-    //     "ClientRequest", 
-    //     // g_variant_new ("i", 100), 
-    //     // g_variant_new ("i", 3), 
-    //     g_variant_new ("(ii^ay)", 100, 3, "123"), 
-    //     G_DBUS_CALL_FLAGS_NONE, 
-    //     -1, 
-    //     NULL, 
-    //     NULL, 
-    //     NULL);
+        &error);
+    if(error != NULL){                                                           
+        g_print("Error: itf2 Failed to proxy object. Reason: %s.\n", error->message);
+        g_error_free(error);                                                     
+    }
 }
 
-static void on_name_vanished (GDBusConnection *connection,
-                  const gchar     *name,
-                  gpointer         user_data)
+static void name_vanished_handler
+        (GDBusConnection *connection,
+        const gchar *name,
+        private_data *pdat)
 {
-    g_print("on_name_vanished: name %s\n", name);
+    g_print("name_vanished_handler: name %s\n", name);
+    //
+
+}
+
+static void method_add_callback(
+        GObject* gobj, 
+        GAsyncResult* res, 
+        private_data *pdat)
+{
+    GError *error = NULL;
+    //
+	gint sum = 0;
+    //
+	interface1_call_add_finish(gobj, &sum, res, &error);
+    //
+    g_print("method_add_callback: sum = %d\n", sum);
+}
+
+static void method_transfer_callback(
+        GObject* gobj, 
+        GAsyncResult* res, 
+        private_data *pdat)
+{
+    GError *error = NULL;
+    //
+    GVariant *out_data;
+    //
+	interface2_call_transfer_finish (
+        gobj, &out_data,
+        res, &error);
+    //
+    test_strct val;
+    de_pkg(out_data, &val, sizeof(val));
+    //
+    g_print("method_transfer_callback: i=%d, s=%s, d=%lf, f=%f/%f/%f\n", 
+        val.i, val.s, val.d, val.f[0], val.f[1], val.f[2]);
+}
+
+static gboolean timeout_handler(private_data *pdat)
+{
+    //-- 接口函数没有返回的 无须准备回调函数 --
+    if(IS_INTERFACE1_PROXY(itf1))
+        interface1_call_print (
+            itf1, "log-123456789",
+            NULL, NULL, pdat
+        );
+    
+    // 准备一个"ai"类型数据
+    GVariantBuilder *builder = g_variant_builder_new(G_VARIANT_TYPE("ai"));
+    g_variant_builder_add(builder, "i", 1);
+    g_variant_builder_add(builder, "i", 30);
+    g_variant_builder_add(builder, "i", 0);
+    g_variant_builder_add(builder, "i", 7000);
+    GVariant *tar = g_variant_builder_end(builder);
+    //-- 接口函数有返回的 需准备一个回调函数来处理返回的数据 --
+    if(IS_INTERFACE1_PROXY(itf1))
+        interface1_call_add (
+            itf1, tar,
+            NULL, method_add_callback, pdat
+        );
+
+    //-- 参数序列化 --
+    test_strct val = {
+        .i = 10086,
+        .s = "abc",
+        .d = 3.1415926,
+        .f = {1.23, 4.56, 7.89},
+    };
+    if(IS_INTERFACE2_PROXY(itf2))
+        interface2_call_transfer(
+            itf2, en_pkg(&val, sizeof(val)), 
+            NULL, method_transfer_callback, pdat
+        );
+    //
+    return 1;
 }
 
 int main (int argc, char *argv[])
 {
-  guint watcher_id;
-  GMainLoop *loop = NULL;
-
-  watcher_id = g_bus_watch_name (
+    private_data pdat;
+    GMainLoop *loop = NULL;
+    guint watcher_id;
+    //
+    watcher_id = g_bus_watch_name (
             G_BUS_TYPE_SESSION,
-            "org.zhd.qbox",
+            "org.wx.test",
             G_BUS_NAME_OWNER_FLAGS_NONE,
-            on_name_appeared,
-            on_name_vanished,
-            NULL,
-            NULL);
-
-  loop = g_main_loop_new (NULL, FALSE);
-  g_main_loop_run (loop);
-
-  g_bus_unwatch_name (watcher_id);
-  return 0;
+            name_appeared_handler,
+            name_vanished_handler,
+            (gpointer)&pdat, // user_data
+            NULL);           // user_data_free_func()
+    //
+    g_timeout_add(1000, (GSourceFunc)timeout_handler, NULL);
+    //
+    loop = g_main_loop_new (NULL, FALSE);
+    g_main_loop_run (loop);
+    //
+    g_bus_unwatch_name (watcher_id);
+    return 0;
 }
-
-// int main (int argc, char **argv)
-// {
-// 	GDBusConnection *bcon;
-// 	GMainLoop *loop;
- 
-// 	g_type_init ();
-// 	bcon = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
-// 	proxy_log = g_dbus_proxy_new_sync (bcon, 
-//         G_DBUS_PROXY_FLAGS_NONE, 
-//         NULL, 
-//         "org.zhd.qbox", 
-//         "/org/zhd/qbox/log",
-//         "org.zhd.qbox.log", 
-//         NULL, 
-//         NULL);
-// 	g_dbus_proxy_call (proxy_log, 
-//         "WriteData", 
-//         g_variant_new ("(s)", "1231415"), 
-//         G_DBUS_CALL_FLAGS_NONE, 
-//         -1, 
-//         NULL, 
-//         (GAsyncReadyCallback) mycallback, 
-//         NULL);
- 
-// 	loop = g_main_loop_new(NULL, FALSE);
-// 	g_main_loop_run(loop);
-// 	return 0;
-// }
