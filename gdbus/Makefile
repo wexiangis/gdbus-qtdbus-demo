@@ -17,7 +17,7 @@ INC += -I./libs/include/glib-2.0
 INC += -I./libs/include/dbus-1.0
 LIBS += -L./libs/lib
 CFLAG +=  -O3 -g -W -Wall
-CFLAG += -lpthread -lglib-2.0 -lgio-2.0 -lgobject-2.0
+CFLAG += -lpthread -lglib-2.0 -lgio-2.0 -lgobject-2.0 -lffi -lz -lgmodule-2.0
 
 target:
 	$(cc) -o s server.c comm.c test.c $(INC) $(LIBS) $(CFLAG)
@@ -40,9 +40,9 @@ zlib:
 libffi:
 	@tar -xzf ./pkg/libffi-3.2.1.tar.gz -C ./libs && \
 	cd $(ROOT)/libs/libffi-3.2.1 && \
-	./configure --prefix=$(ROOT)/libs --host=$(host) && \
+	./configure --prefix=$(ROOT)/libs --host=$(host) CC=$(cc) && \
 	make -j4 && make install && \
-	cp $(ROOT)/libs/lib/libffi-3.2.1/include/* $(ROOT)/libs/include && \
+	cp $(ROOT)/libs/lib/libffi-3.2.1/include/* $(ROOT)/libs/include/ && \
 	rm $(ROOT)/libs/lib/libffi-3.2.1 -rf && \
 	cd -
 
@@ -50,7 +50,7 @@ glib:
 	@tar -xJf ./pkg/glib-2.40.2.tar.xz -C ./libs && \
 	cd $(ROOT)/libs/glib-2.40.2 && \
 	cp ../../pkg/arm-linux.cache ./ && \
-	./configure --prefix=$(ROOT)/libs --host=$(host) ZLIB_LIBS="-lz -L$(ROOT)/libs/lib" ZLIB_CFLAGS=-I$(ROOT)/libs/include LIBFFI_LIBS="-lffi -L$(ROOT)/libs/lib" LIBFFI_CFLAGS=-I$(ROOT)/libs/include --cache-file=arm-linux.cache && \
+	./configure --prefix=$(ROOT)/libs --host=$(host) ZLIB_LIBS="-lz -L$(ROOT)/libs/lib" ZLIB_CFLAGS=-I$(ROOT)/libs/include LIBFFI_LIBS="-lffi -L$(ROOT)/libs/lib" LIBFFI_CFLAGS=-I$(ROOT)/libs/include --cache-file=arm-linux.cache CC=$(cc) && \
 	make -j4 && make install && \
 	cp ./glib/glibconfig.h $(ROOT)/libs/include/glib-2.0 && \
 	cd -
