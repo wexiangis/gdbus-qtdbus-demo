@@ -193,12 +193,23 @@ static const _ExtendedGDBusMethodInfo _interface1_method_info_print =
   FALSE
 };
 
-static const _ExtendedGDBusArgInfo _interface1_method_info_add_IN_ARG_val =
+static const _ExtendedGDBusArgInfo _interface1_method_info_add_IN_ARG_va =
 {
   {
     -1,
-    (gchar *) "val",
-    (gchar *) "ai",
+    (gchar *) "va",
+    (gchar *) "i",
+    NULL
+  },
+  FALSE
+};
+
+static const _ExtendedGDBusArgInfo _interface1_method_info_add_IN_ARG_vb =
+{
+  {
+    -1,
+    (gchar *) "vb",
+    (gchar *) "i",
     NULL
   },
   FALSE
@@ -206,7 +217,8 @@ static const _ExtendedGDBusArgInfo _interface1_method_info_add_IN_ARG_val =
 
 static const _ExtendedGDBusArgInfo * const _interface1_method_info_add_IN_ARG_pointers[] =
 {
-  &_interface1_method_info_add_IN_ARG_val,
+  &_interface1_method_info_add_IN_ARG_va,
+  &_interface1_method_info_add_IN_ARG_vb,
   NULL
 };
 
@@ -221,9 +233,21 @@ static const _ExtendedGDBusArgInfo _interface1_method_info_add_OUT_ARG_sum =
   FALSE
 };
 
+static const _ExtendedGDBusArgInfo _interface1_method_info_add_OUT_ARG_sum_str =
+{
+  {
+    -1,
+    (gchar *) "sum_str",
+    (gchar *) "s",
+    NULL
+  },
+  FALSE
+};
+
 static const _ExtendedGDBusArgInfo * const _interface1_method_info_add_OUT_ARG_pointers[] =
 {
   &_interface1_method_info_add_OUT_ARG_sum,
+  &_interface1_method_info_add_OUT_ARG_sum_str,
   NULL
 };
 
@@ -376,7 +400,8 @@ interface1_default_init (Interface1Iface *iface)
    * Interface1::handle-add:
    * @object: A #Interface1.
    * @invocation: A #GDBusMethodInvocation.
-   * @arg_val: Argument passed by remote caller.
+   * @arg_va: Argument passed by remote caller.
+   * @arg_vb: Argument passed by remote caller.
    *
    * Signal emitted when a remote caller is invoking the <link linkend="gdbus-method-org-wx-test-interface1.add">add()</link> D-Bus method.
    *
@@ -392,8 +417,8 @@ interface1_default_init (Interface1Iface *iface)
     NULL,
     g_cclosure_marshal_generic,
     G_TYPE_BOOLEAN,
-    2,
-    G_TYPE_DBUS_METHOD_INVOCATION, G_TYPE_VARIANT);
+    3,
+    G_TYPE_DBUS_METHOD_INVOCATION, G_TYPE_INT, G_TYPE_INT);
 
   /* GObject signals for received D-Bus signals: */
   /**
@@ -533,7 +558,8 @@ _out:
 /**
  * interface1_call_add:
  * @proxy: A #Interface1Proxy.
- * @arg_val: Argument to pass with the method invocation.
+ * @arg_va: Argument to pass with the method invocation.
+ * @arg_vb: Argument to pass with the method invocation.
  * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @callback: A #GAsyncReadyCallback to call when the request is satisfied or %NULL.
  * @user_data: User data to pass to @callback.
@@ -547,15 +573,17 @@ _out:
 void
 interface1_call_add (
     Interface1 *proxy,
-    GVariant *arg_val,
+    gint arg_va,
+    gint arg_vb,
     GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data)
 {
   g_dbus_proxy_call (G_DBUS_PROXY (proxy),
     "add",
-    g_variant_new ("(@ai)",
-                   arg_val),
+    g_variant_new ("(ii)",
+                   arg_va,
+                   arg_vb),
     G_DBUS_CALL_FLAGS_NONE,
     -1,
     cancellable,
@@ -567,6 +595,7 @@ interface1_call_add (
  * interface1_call_add_finish:
  * @proxy: A #Interface1Proxy.
  * @out_sum: (out): Return location for return parameter or %NULL to ignore.
+ * @out_sum_str: (out): Return location for return parameter or %NULL to ignore.
  * @res: The #GAsyncResult obtained from the #GAsyncReadyCallback passed to interface1_call_add().
  * @error: Return location for error or %NULL.
  *
@@ -578,6 +607,7 @@ gboolean
 interface1_call_add_finish (
     Interface1 *proxy,
     gint *out_sum,
+    gchar **out_sum_str,
     GAsyncResult *res,
     GError **error)
 {
@@ -586,8 +616,9 @@ interface1_call_add_finish (
   if (_ret == NULL)
     goto _out;
   g_variant_get (_ret,
-                 "(i)",
-                 out_sum);
+                 "(is)",
+                 out_sum,
+                 out_sum_str);
   g_variant_unref (_ret);
 _out:
   return _ret != NULL;
@@ -596,8 +627,10 @@ _out:
 /**
  * interface1_call_add_sync:
  * @proxy: A #Interface1Proxy.
- * @arg_val: Argument to pass with the method invocation.
+ * @arg_va: Argument to pass with the method invocation.
+ * @arg_vb: Argument to pass with the method invocation.
  * @out_sum: (out): Return location for return parameter or %NULL to ignore.
+ * @out_sum_str: (out): Return location for return parameter or %NULL to ignore.
  * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
@@ -610,16 +643,19 @@ _out:
 gboolean
 interface1_call_add_sync (
     Interface1 *proxy,
-    GVariant *arg_val,
+    gint arg_va,
+    gint arg_vb,
     gint *out_sum,
+    gchar **out_sum_str,
     GCancellable *cancellable,
     GError **error)
 {
   GVariant *_ret;
   _ret = g_dbus_proxy_call_sync (G_DBUS_PROXY (proxy),
     "add",
-    g_variant_new ("(@ai)",
-                   arg_val),
+    g_variant_new ("(ii)",
+                   arg_va,
+                   arg_vb),
     G_DBUS_CALL_FLAGS_NONE,
     -1,
     cancellable,
@@ -627,8 +663,9 @@ interface1_call_add_sync (
   if (_ret == NULL)
     goto _out;
   g_variant_get (_ret,
-                 "(i)",
-                 out_sum);
+                 "(is)",
+                 out_sum,
+                 out_sum_str);
   g_variant_unref (_ret);
 _out:
   return _ret != NULL;
@@ -657,6 +694,7 @@ interface1_complete_print (
  * @object: A #Interface1.
  * @invocation: (transfer full): A #GDBusMethodInvocation.
  * @sum: Parameter to return.
+ * @sum_str: Parameter to return.
  *
  * Helper function used in service implementations to finish handling invocations of the <link linkend="gdbus-method-org-wx-test-interface1.add">add()</link> D-Bus method. If you instead want to finish handling an invocation by returning an error, use g_dbus_method_invocation_return_error() or similar.
  *
@@ -666,11 +704,13 @@ void
 interface1_complete_add (
     Interface1 *object,
     GDBusMethodInvocation *invocation,
-    gint sum)
+    gint sum,
+    const gchar *sum_str)
 {
   g_dbus_method_invocation_return_value (invocation,
-    g_variant_new ("(i)",
-                   sum));
+    g_variant_new ("(is)",
+                   sum,
+                   sum_str));
 }
 
 /* ------------------------------------------------------------------------ */

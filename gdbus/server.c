@@ -11,7 +11,7 @@ Interface1* itf1=NULL;
 Interface2* itf2=NULL;
 
 static void handle_print(
-        GObject* object,
+        GObject* gobj,
         GDBusMethodInvocation *invocation,
         const gchar *value,
         private_data *pdat)
@@ -20,27 +20,24 @@ static void handle_print(
 }
 
 static void handle_add(
-    GObject* object,
+    GObject* gobj,
     GDBusMethodInvocation *invocation,
-    GVariant *val,
+    gint va,
+    gint vb,
     private_data *pdat)
 {
-    g_print("handle_add:\n");
+    g_print("handle_add: %d + %d\n", va, vb);
     //
-    gint sum = 0, tmp;
-    GVariant *tar;
-    g_variant_get(val, "ai", &tar);
-    while(g_variant_iter_loop(tar, "i", &tmp))
-    {
-        printf("  add : %d\n", tmp);
-        sum += tmp;
-    }
+    gint sum = va + vb;
+    gchar *sum_str = calloc(64, 1);//这里必须使用内存分配 释放由 interface1_complete_add
     //
-    interface1_complete_add(object, invocation, sum);
+    snprintf(sum_str, 64, "%d", sum);
+    //
+    interface1_complete_add(gobj, invocation, sum, sum_str);
 }
 
 static void handle_transfer(
-    GObject* object,
+    GObject* gobj,
     GDBusMethodInvocation *invocation,
     GVariant *in_data,
     private_data *pdat)
@@ -58,13 +55,13 @@ static void handle_transfer(
     val.f[1] = 2.222;
     val.f[2] = 3.333;
     //
-    interface2_complete_transfer(object, invocation, en_pkg(&val, sizeof(val)));
+    interface2_complete_transfer(gobj, invocation, en_pkg(&val, sizeof(val)));
 }
 
 static gboolean emit_signal_boradcast(private_data *pdat)          
-{                                     
-    gchar *data = "this is boradcast";
-    interface1_emit_boradcast(itf1, data);
+{
+    gchar *signal_data = "123abc";
+    interface1_emit_boradcast(itf1, signal_data);
     return TRUE;                                          
 }
 
@@ -74,13 +71,15 @@ void bus_acquired_handler(
         private_data *pdat)
 {
     GError *error = NULL;
+    
+    pdat->isRun = 1;
 
     printf("bus_acquired_handler has been invoked\n");
     printf("bus_acquired_handler the name = %s\n",name);
     //
     itf1 = interface1_skeleton_new();
-    g_signal_connect(itf1, "handle-print", G_CALLBACK(handle_print), NULL);
-    g_signal_connect(itf1, "handle-add", G_CALLBACK(handle_add), NULL);
+    g_signal_connect(itf1, "handle-print", G_CALLBACK(handle_print), pdat);
+    g_signal_connect(itf1, "handle-add", G_CALLBACK(handle_add), pdat);
     //
     g_dbus_interface_skeleton_export(
             G_DBUS_INTERFACE_SKELETON(itf1), 
@@ -93,7 +92,7 @@ void bus_acquired_handler(
     }
     //
     itf2 = interface2_skeleton_new();
-    g_signal_connect(itf2, "handle-transfer", G_CALLBACK(handle_transfer), NULL);
+    g_signal_connect(itf2, "handle-transfer", G_CALLBACK(handle_transfer), pdat);
     //
     g_dbus_interface_skeleton_export(
             G_DBUS_INTERFACE_SKELETON(itf2), 
@@ -137,7 +136,7 @@ int main(void)
             (gpointer)&pdat, // user_data
             NULL);           // user_data_free_func()
     //
-    g_timeout_add(1000, (GSourceFunc)emit_signal_boradcast, NULL);
+    g_timeout_add(1000, (GSourceFunc)emit_signal_boradcast, (gpointer)&pdat);
     //
     loop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(loop);

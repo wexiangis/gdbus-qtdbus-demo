@@ -11,23 +11,29 @@ Interface1* itf1=NULL;
 Interface2* itf2=NULL;
 
 static void handle_boradcast(
-        GObject* object,
+        GObject* gobj,
         GDBusMethodInvocation *invocation,
-        const gchar *value,
+        const gchar *arg_data,
         private_data *pdat)
 {
-    g_print("handle_boradcast: %s\n", value);
+    g_print("handle_boradcast: %s\n", arg_data);
+    int i = 0;
+    while(arg_data[i])
+        printf("%d\n", arg_data[i++]);
 }
 
-static void name_appeared_handler
-        (GDBusConnection *connection,
+static void name_appeared_handler(
+        GDBusConnection *connection,
         const gchar *name,
         const gchar *name_owner,
         private_data *pdat)
 {
-    g_print("name_appeared_handler: name %s, owner %s\n", name, name_owner);
-    //
     GError *error = NULL;
+    
+    pdat->isRun = 1;
+    
+    g_print("name_appeared_handler: name %s, owner %s\n", name, name_owner);
+    
     //
     itf1 = interface1_proxy_new_sync(
         connection,
@@ -40,7 +46,10 @@ static void name_appeared_handler
         g_print("Error: itf1 Failed to proxy object. Reason: %s.\n", error->message);
         g_error_free(error);                                                     
     }
-    g_signal_connect(itf1, "boradcast", G_CALLBACK(handle_boradcast), NULL);
+    
+    pdat->handler_id = g_signal_connect(
+        itf1, "boradcast", G_CALLBACK(handle_boradcast), pdat);
+    
     //
     itf2 = interface2_proxy_new_sync(
         connection,
@@ -60,9 +69,15 @@ static void name_vanished_handler
         const gchar *name,
         private_data *pdat)
 {
+    pdat->isRun = 0;
+    //
     g_print("name_vanished_handler: name %s\n", name);
     //
-
+    if(pdat->handler_id)
+    {
+        g_signal_handler_disconnect(itf1, pdat->handler_id);
+        pdat->handler_id = 0;
+    }
 }
 
 static void method_add_callback(
@@ -73,10 +88,10 @@ static void method_add_callback(
     GError *error = NULL;
     //
 	gint sum = 0;
+    gchar *sum_str = NULL;
     //
-	interface1_call_add_finish(gobj, &sum, res, &error);
-    //
-    g_print("method_add_callback: sum = %d\n", sum);
+	interface1_call_add_finish(gobj, &sum, &sum_str, res, &error);
+    g_print("method_add_callback: sum = %d, sum_str = \"%s\"\n", sum, sum_str);
 }
 
 static void method_transfer_callback(
@@ -101,24 +116,20 @@ static void method_transfer_callback(
 
 static gboolean timeout_handler(private_data *pdat)
 {
+    
     //-- 接口函数没有返回的 无须准备回调函数 --
-    if(IS_INTERFACE1_PROXY(itf1))
+    // if(IS_INTERFACE1_PROXY(itf1))
+    if(pdat->isRun)
         interface1_call_print (
             itf1, "log-123456789",
             NULL, NULL, pdat
         );
     
-    // 准备一个"ai"类型数据
-    GVariantBuilder *builder = g_variant_builder_new(G_VARIANT_TYPE("ai"));
-    g_variant_builder_add(builder, "i", 1);
-    g_variant_builder_add(builder, "i", 30);
-    g_variant_builder_add(builder, "i", 0);
-    g_variant_builder_add(builder, "i", 7000);
-    GVariant *tar = g_variant_builder_end(builder);
     //-- 接口函数有返回的 需准备一个回调函数来处理返回的数据 --
-    if(IS_INTERFACE1_PROXY(itf1))
+    // if(IS_INTERFACE1_PROXY(itf1))
+    if(pdat->isRun)
         interface1_call_add (
-            itf1, tar,
+            itf1, 123, 432,
             NULL, method_add_callback, pdat
         );
 
@@ -129,18 +140,22 @@ static gboolean timeout_handler(private_data *pdat)
         .d = 3.1415926,
         .f = {1.23, 4.56, 7.89},
     };
-    if(IS_INTERFACE2_PROXY(itf2))
+    // if(IS_INTERFACE2_PROXY(itf2))
+    if(pdat->isRun)
         interface2_call_transfer(
             itf2, en_pkg(&val, sizeof(val)), 
             NULL, method_transfer_callback, pdat
         );
     //
-    return 1;
+    return TRUE;
 }
 
 int main (int argc, char *argv[])
 {
-    private_data pdat;
+    private_data pdat = {
+        .isRun = 0,
+        .handler_id = 0
+    };
     GMainLoop *loop = NULL;
     guint watcher_id;
     //
@@ -153,7 +168,7 @@ int main (int argc, char *argv[])
             (gpointer)&pdat, // user_data
             NULL);           // user_data_free_func()
     //
-    g_timeout_add(1000, (GSourceFunc)timeout_handler, NULL);
+    g_timeout_add(1000, (GSourceFunc)timeout_handler, (gpointer)&pdat);
     //
     loop = g_main_loop_new (NULL, FALSE);
     g_main_loop_run (loop);

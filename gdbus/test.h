@@ -32,7 +32,8 @@ struct _Interface1Iface
   gboolean (*handle_add) (
     Interface1 *object,
     GDBusMethodInvocation *invocation,
-    GVariant *arg_val);
+    gint arg_va,
+    gint arg_vb);
 
   gboolean (*handle_print) (
     Interface1 *object,
@@ -59,7 +60,8 @@ void interface1_complete_print (
 void interface1_complete_add (
     Interface1 *object,
     GDBusMethodInvocation *invocation,
-    gint sum);
+    gint sum,
+    const gchar *sum_str);
 
 
 
@@ -91,7 +93,8 @@ gboolean interface1_call_print_sync (
 
 void interface1_call_add (
     Interface1 *proxy,
-    GVariant *arg_val,
+    gint arg_va,
+    gint arg_vb,
     GCancellable *cancellable,
     GAsyncReadyCallback callback,
     gpointer user_data);
@@ -99,13 +102,16 @@ void interface1_call_add (
 gboolean interface1_call_add_finish (
     Interface1 *proxy,
     gint *out_sum,
+    gchar **out_sum_str,
     GAsyncResult *res,
     GError **error);
 
 gboolean interface1_call_add_sync (
     Interface1 *proxy,
-    GVariant *arg_val,
+    gint arg_va,
+    gint arg_vb,
     gint *out_sum,
+    gchar **out_sum_str,
     GCancellable *cancellable,
     GError **error);
 

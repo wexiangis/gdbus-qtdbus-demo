@@ -7,8 +7,8 @@
 //项目工程结构体,会作为私有指针在回调函数的最后一个参数出现
 //方便随时检阅项目的其它数据
 typedef struct{
-    int xxx;
-    char sss;
+    int isRun;
+   int handler_id;
 }private_data;
 
 //测试用的用于序列化的结构体
