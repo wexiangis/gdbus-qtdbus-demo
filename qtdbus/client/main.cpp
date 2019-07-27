@@ -20,13 +20,13 @@ void timeout_handler()
     ClientInfo* itf1 = new ClientInfo("org.wx.test", "/org/wx/test/interface1", QDBusConnection::sessionBus());
     ClientInfo2* itf2 = new ClientInfo2("org.wx.test", "/org/wx/test/interface2", QDBusConnection::sessionBus());
 
-//    QDBusConnection::sessionBus().connect(
-//                "org.wx.test",
-//                "/org/wx/test/interface1",
-//                "org.wx.test.interface1",
-//                "boradcast",
-//                itf1,
-//                SLOT(boradcast(const QString data)));
+    QDBusConnection::sessionBus().connect(
+                "org.wx.test",
+                "/org/wx/test/interface1",
+                "org.wx.test.interface1",
+                "boradcast",
+                itf1,
+                SLOT(boradcast(const QString data)));
 
     while(true)
     {
