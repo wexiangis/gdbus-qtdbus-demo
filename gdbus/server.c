@@ -58,11 +58,15 @@ static void handle_transfer(
     interface2_complete_transfer(gobj, invocation, en_pkg(&val, sizeof(val)));
 }
 
-static gboolean emit_signal_boradcast(private_data *pdat)          
+// 注意这个回调函数是接收端,格式不一样,
+// 没有GDBusMethodInvocation *invocation
+static gboolean handle_boradcast(
+        GObject* gobj,
+        const gchar *arg_data,
+        gpointer user_data)
 {
-    gchar *signal_data = "123abc";
-    interface1_emit_boradcast(itf1, signal_data);
-    return TRUE;                                          
+    g_print("handle_boradcast: %s\n", arg_data);
+    return TRUE;
 }
 
 void bus_acquired_handler(
@@ -74,12 +78,13 @@ void bus_acquired_handler(
     
     pdat->isRun = 1;
 
-    printf("bus_acquired_handler has been invoked\n");
-    printf("bus_acquired_handler the name = %s\n",name);
+    printf("bus_acquired_handler has been invoked: name = %s\n",name);
     //
     itf1 = interface1_skeleton_new();
     g_signal_connect(itf1, "handle-print", G_CALLBACK(handle_print), pdat);
     g_signal_connect(itf1, "handle-add", G_CALLBACK(handle_add), pdat);
+    // 如果需要,可以接收自己发出的信号
+    // g_signal_connect(itf1, "boradcast", G_CALLBACK(handle_boradcast), pdat);
     //
     g_dbus_interface_skeleton_export(
             G_DBUS_INTERFACE_SKELETON(itf1), 
@@ -119,6 +124,14 @@ void name_lost_handler(
         private_data *pdat)
 {
     printf("GBusNameLost_Callback has been invoked\n");
+}
+
+
+static gboolean emit_signal_boradcast(private_data *pdat)          
+{
+    gchar *signal_data = "this is server boradcast !!";
+    interface1_emit_boradcast(itf1, signal_data);
+    return TRUE;                                          
 }
 
 int main(void)

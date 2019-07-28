@@ -24,13 +24,23 @@
 ServerInfo::ServerInfo(QObject *parent)
     : QDBusAbstractAdaptor(parent)
 {
-    // constructor
-    setAutoRelaySignals(true);
+    // 如果需要,服务器可以接收自己发出的信号
+//    QDBusConnection::sessionBus().connect(
+//                "org.wx.test",
+//                "/org/wx/test/interface1",
+//                "org.wx.test.interface1",
+//                "boradcast",
+//                this,
+//                SLOT(boradcast_get(QString)));
 }
 
 ServerInfo::~ServerInfo()
 {
-    // destructor
+}
+
+void ServerInfo::boradcast_get(QString data)
+{
+    qDebug() << "boradcast_get: " << data;
 }
 
 #include <QDebug>
@@ -76,16 +86,16 @@ QDBusVariant ServerInfo2::transfer(const QDBusVariant &in_data)
     test_strct tt;
     //
     memcpy(&tt, in_data.variant().toByteArray().data(), sizeof(tt));
-    qDebug() << "transfer: \n"
+    qDebug() << "transfer: "
              << "i=" << tt.i << " "
              << "s=" << tt.s << " "
              << "d=" << tt.d << " "
              << "f=" << tt.f[0] << "/" << tt.f[1] << "/" << tt.f[2];
     //
-    tt.i = 10086;
-    tt.s[0] = 'a';tt.s[1] = 'b';tt.s[2] = 'c';
-    tt.d = 3.1415926;
-    tt.f[0] = 1.23;tt.f[2] = 4.56;tt.f[3] = 7.89;
+    tt.i = 10010;
+    tt.s[0] = '1';tt.s[1] = '2';tt.s[2] = '3';
+    tt.d = 1.23456;
+    tt.f[0] = 1.11;tt.f[1] = 2.22;tt.f[2] = 3.33;
     QByteArray baIn;
     baIn.resize(sizeof(tt));
     memcpy(baIn.data(), &tt, sizeof(tt));

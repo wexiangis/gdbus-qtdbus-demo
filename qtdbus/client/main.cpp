@@ -2,11 +2,6 @@
 #include <QDebug>
 #include "clientinfo.h"
 
-void boradcast(const QString data)
-{
-    qDebug() << "boradcast: " << data;
-}
-
 typedef struct{
     int i;
     char s[3];
@@ -14,26 +9,19 @@ typedef struct{
     float f[3];
 }test_strct;
 
+ClientInfo* itf1 = NULL;
+ClientInfo2* itf2 = NULL;
+
 void timeout_handler()
 {
     test_strct tt;
-    ClientInfo* itf1 = new ClientInfo("org.wx.test", "/org/wx/test/interface1", QDBusConnection::sessionBus());
-    ClientInfo2* itf2 = new ClientInfo2("org.wx.test", "/org/wx/test/interface2", QDBusConnection::sessionBus());
-
-    QDBusConnection::sessionBus().connect(
-                "org.wx.test",
-                "/org/wx/test/interface1",
-                "org.wx.test.interface1",
-                "boradcast",
-                itf1,
-                SLOT(boradcast(const QString data)));
 
     while(true)
     {
         QThread::msleep(1000);
 
         //-- print --
-        itf1->print("here is qt5");
+        itf1->print("client-log-0987bvcx");
 
         //-- add --
         QString sum_str;
@@ -56,8 +44,11 @@ void timeout_handler()
                  << "f=" << tt.f[0] << "/" << tt.f[1] << "/" << tt.f[2];
 
         //
-//        QDBusMessage msg = QDBusMessage::createSignal("/", "com.vnmp.client.infos", "signalTest");
-//        msg << QString("here is client\n");
+//        QDBusMessage msg = QDBusMessage::createSignal(
+//                    "/org/wx/test/interface1",
+//                    "org.wx.test.interface1",
+//                    "boradcast");
+//        msg << QString("this is client boradcast !!");
 //        QDBusConnection::sessionBus().send(msg);
     }
 }
@@ -65,6 +56,10 @@ void timeout_handler()
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+
+    //必须在main函数初始化,不能放到线程中,否则无法接收信号
+    itf1 = new ClientInfo("org.wx.test", "/org/wx/test/interface1", QDBusConnection::sessionBus());
+    itf2 = new ClientInfo2("org.wx.test", "/org/wx/test/interface2", QDBusConnection::sessionBus());
 
     std::thread th1(timeout_handler);
     th1.detach();

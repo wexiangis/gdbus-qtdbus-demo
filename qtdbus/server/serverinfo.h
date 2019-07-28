@@ -49,6 +49,8 @@ class ServerInfo: public QDBusAbstractAdaptor
 public:
     ServerInfo(QObject *parent);
     virtual ~ServerInfo();
+public slots:
+    void boradcast_get(QString data);
 
 public: // PROPERTIES
 public Q_SLOTS: // METHODS

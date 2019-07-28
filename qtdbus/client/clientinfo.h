@@ -34,8 +34,8 @@ public:
     ClientInfo(const QString &service, const QString &path, const QDBusConnection &connection, QObject *parent = nullptr);
 
     ~ClientInfo();
-//public slots:
-//    void boradcast_get(QString data);
+public slots:
+    void boradcast_get(QString data);
 
 public Q_SLOTS: // METHODS
     inline QDBusPendingReply<int, QString> add(int va, int vb)

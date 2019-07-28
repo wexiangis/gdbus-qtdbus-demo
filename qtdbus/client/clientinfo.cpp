@@ -19,23 +19,23 @@
 ClientInfo::ClientInfo(const QString &service, const QString &path, const QDBusConnection &connection, QObject *parent)
     : QDBusAbstractInterface(service, path, staticInterfaceName(), connection, parent)
 {
-//    QDBusConnection::sessionBus().connect(
-//                "org.wx.test",
-//                "/org/wx/test/interface1",
-//                "org.wx.test.interface1",
-//                "boradcast",
-//                this,
-//                SLOT(boradcast_get(QString)));
+    QDBusConnection::sessionBus().connect(
+                "org.wx.test",
+                "/org/wx/test/interface1",
+                "org.wx.test.interface1",
+                "boradcast",
+                this,
+                SLOT(boradcast_get(QString)));
 }
 
 ClientInfo::~ClientInfo()
 {
 }
 
-//void ClientInfo::boradcast_get(QString data)
-//{
-//    qDebug() << "boradcast_get: " << data;
-//}
+void ClientInfo::boradcast_get(QString data)
+{
+    qDebug() << "boradcast_get: " << data;
+}
 
 /*
  * Implementation of interface class ClientInfo

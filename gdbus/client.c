@@ -10,16 +10,16 @@
 Interface1* itf1=NULL;
 Interface2* itf2=NULL;
 
-static void handle_boradcast(
+// 注意这里client端g_signal_connect()注册的回调
+// 函数格式和server端的不一样, 
+// 少了GDBusMethodInvocation *invocation参数
+static gboolean handle_boradcast(
         GObject* gobj,
-        GDBusMethodInvocation *invocation,
         const gchar *arg_data,
-        private_data *pdat)
+        gpointer user_data)
 {
     g_print("handle_boradcast: %s\n", arg_data);
-    int i = 0;
-    while(arg_data[i])
-        printf("%d\n", arg_data[i++]);
+    return TRUE;
 }
 
 static void name_appeared_handler(
@@ -42,6 +42,13 @@ static void name_appeared_handler(
         "/org/wx/test/interface1", 
         NULL, 
         &error);
+    // itf1 = interface1_proxy_new_for_bus_sync (
+    //     G_BUS_TYPE_SESSION,
+    //     G_DBUS_PROXY_FLAGS_NONE,
+    //     "org.wx.test", 
+    //     "/org/wx/test/interface1", 
+    //     NULL,
+    //     &error);
     if(error != NULL){                                                           
         g_print("Error: itf1 Failed to proxy object. Reason: %s.\n", error->message);
         g_error_free(error);                                                     
@@ -58,6 +65,13 @@ static void name_appeared_handler(
         "/org/wx/test/interface2", 
         NULL, 
         &error);
+    // itf2 = interface2_proxy_new_for_bus_sync (
+    //     G_BUS_TYPE_SESSION,
+    //     G_DBUS_PROXY_FLAGS_NONE,
+    //     "org.wx.test", 
+    //     "/org/wx/test/interface2", 
+    //     NULL,
+    //     &error);
     if(error != NULL){                                                           
         g_print("Error: itf2 Failed to proxy object. Reason: %s.\n", error->message);
         g_error_free(error);                                                     
@@ -121,7 +135,7 @@ static gboolean timeout_handler(private_data *pdat)
     // if(IS_INTERFACE1_PROXY(itf1))
     if(pdat->isRun)
         interface1_call_print (
-            itf1, "log-123456789",
+            itf1, "client-log-1234abcd",
             NULL, NULL, pdat
         );
     
