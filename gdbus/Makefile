@@ -1,5 +1,6 @@
 
 #cross:=arm-linux-gnueabihf
+#cross:=arm-linux
 
 host:=
 cc:=gcc
@@ -65,7 +66,7 @@ expat:
 dbus:
 	@tar -xzf ./pkg/dbus-1.13.4.tar.gz -C ./libs && \
 	cd $(ROOT)/libs/dbus-1.13.4 && \
-	./configure --prefix=$(ROOT)/libs --host=$(host) EXPAT_LIBS="-lexpat -L$(ROOT)/libs/lib" EXPAT_CFLAGS=-I$(ROOT)/libs/include && \
+	./configure --prefix=$(ROOT)/libs --host=$(host) EXPAT_LIBS="-lexpat -L$(ROOT)/libs/lib" EXPAT_CFLAGS=-I$(ROOT)/libs/include GLIB_LIBS="-lgio-2.0 -L$(ROOT)/libs/lib" GLIB_CFLAGS=-I$(ROOT)/libs/include && \
 	make -j4 && make install && \
 	cd -
 
