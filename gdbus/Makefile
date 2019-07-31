@@ -21,8 +21,8 @@ CFLAG +=  -O3 -g -W -Wall
 CFLAG += -lpthread -lglib-2.0 -lgio-2.0 -lgobject-2.0 -lffi -lz -lgmodule-2.0
 
 target:
-	$(cc) -o s server.c comm.c test.c $(INC) $(LIBS) $(CFLAG)
-	$(cc) -o c client.c comm.c test.c $(INC) $(LIBS) $(CFLAG)
+	$(cc) -o s server.c gdbus_cs.c test.c $(INC) $(LIBS) $(CFLAG)
+	$(cc) -o c client.c gdbus_cs.c test.c $(INC) $(LIBS) $(CFLAG)
 
 xml:
 	./libs/bin/gdbus-codegen --interface-prefix=org.wx.test --generate-c-code=test test.xml
@@ -66,11 +66,10 @@ expat:
 dbus:
 	@tar -xzf ./pkg/dbus-1.13.4.tar.gz -C ./libs && \
 	cd $(ROOT)/libs/dbus-1.13.4 && \
-	./configure --prefix=$(ROOT)/libs --host=$(host) EXPAT_LIBS="-lexpat -L$(ROOT)/libs/lib" EXPAT_CFLAGS=-I$(ROOT)/libs/include GLIB_LIBS="-lgio-2.0 -L$(ROOT)/libs/lib" GLIB_CFLAGS=-I$(ROOT)/libs/include && \
+	./configure --prefix=$(ROOT)/libs --host=$(host) EXPAT_LIBS="-lexpat -L$(ROOT)/libs/lib" EXPAT_CFLAGS=-I$(ROOT)/libs/include GLIB_LIBS="-lgio-2.0 -lgobject-2.0 -lglib-2.0 -L$(ROOT)/libs/lib" GLIB_CFLAGS="-I$(ROOT)/libs/include/glib-2.0 -I$(ROOT)/libs/include/glib-2.0/gobject -I$(ROOT)/libs/include/glib-2.0/glib" && \
 	make -j4 && make install && \
 	cd -
 
 clean:
 	rm ./s ./c ./libs/* -rf
-
 
