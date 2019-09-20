@@ -1,2 +1,3 @@
 *.vscode*
 *.pro.user
+gdbus/libs/*
